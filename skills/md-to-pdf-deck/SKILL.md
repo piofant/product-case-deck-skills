@@ -126,7 +126,7 @@ Every `## H2` becomes a new page. Every `---` between sections is harmless (they
 ## Script arguments
 
 ```
-python3 build.py <source.md> <output.pdf> <title> [tagline] [author]
+python3 build.py <source.md> <output.pdf> <title> [tagline] [author] [--break h1|h2]
 ```
 
 - `source.md` — input markdown (required)
@@ -134,8 +134,17 @@ python3 build.py <source.md> <output.pdf> <title> [tagline] [author]
 - `title` — slide title shown as giant H1 on cover (required)
 - `tagline` — italic line below subtitle (optional)
 - `author` — small byline at bottom of cover (optional)
+- `--break` — slide-break level: `h2` (default) breaks on every `##`, `h1` breaks on every `#`. Use `h1` for denser decks when source is structured as chapters with sub-sections.
 
 The subtitle under the title is auto-extracted from the first `### ` heading in the source.
+
+### Choosing a break level
+
+**`--break h2` (default):** every `##` heading = new slide. Good for sync-style decks where each sub-topic is a self-contained slide with rich content (table, diagram, 5+ bullets). Bad when source has many thin `##` sub-sections under a `#` chapter — produces mostly-empty slides.
+
+**`--break h1`:** every `#` heading = new slide; `##` becomes an in-slide section separator (like a bold sub-header). Good for documentation/guides structured as chapters, where one chapter = one dense slide with multiple sub-sections, tables, and bullets.
+
+Rule of thumb: if your thinnest `##` section is < 3 lines of content, use `--break h1` and consolidate.
 
 ## Variants
 
