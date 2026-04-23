@@ -1,6 +1,6 @@
 ---
 name: md-to-pdf-deck
-description: Convert a markdown file into a polished, presentation-style PDF with dark GitHub theme, centered cover slide, one-slide-per-H2 layout, real dialog blockquotes, and rendered mermaid diagrams. Use when the user asks to export a weekly sync, product update, deck, or documentation as a PDF and wants it to feel like a presentation — not a flowing document. Built for weekly syncs, board updates, product case studies, and technical documentation that needs print-ready polish.
+description: Convert a markdown file into a polished PDF — either a presentation deck (A4 landscape, slide-per-heading, cover) or a single-page longread (continuous scroll, no pagination). Both share a dark GitHub theme, real dialog blockquotes, and rendered mermaid diagrams. Use deck mode for weekly syncs, board updates, product case studies. Use longread mode for reading-style docs (guides, memos, reference material) where the reader scrolls top-to-bottom like a web page.
 ---
 
 # Markdown → Presentation PDF
@@ -126,30 +126,32 @@ Every `## H2` becomes a new page. Every `---` between sections is harmless (they
 ## Script arguments
 
 ```
-python3 build.py <source.md> <output.pdf> <title> [tagline] [author] [--break h1|h2]
+python3 build.py <source.md> <output.pdf> <title> [tagline] [author] [--layout deck|longread] [--break h1|h2]
 ```
 
 - `source.md` — input markdown (required)
 - `output.pdf` — output PDF path (required)
-- `title` — slide title shown as giant H1 on cover (required)
-- `tagline` — italic line below subtitle (optional)
-- `author` — small byline at bottom of cover (optional)
-- `--break` — slide-break level: `h2` (default) breaks on every `##`, `h1` breaks on every `#`. Use `h1` for denser decks when source is structured as chapters with sub-sections.
+- `title` — slide title shown as giant H1 on cover (required; ignored in longread mode)
+- `tagline` — italic line below subtitle (optional; ignored in longread mode)
+- `author` — small byline at bottom of cover (optional; ignored in longread mode)
+- `--layout` — `deck` (default, A4 landscape, slide-per-heading) or `longread` (single continuous page, no pagination)
+- `--break` — slide-break level (deck only): `h2` (default) breaks on every `##`, `h1` breaks on every `#`
 
 The subtitle under the title is auto-extracted from the first `### ` heading in the source.
 
-### Choosing a break level
+### Choosing a layout
+
+**`--layout deck` (default):** A4 landscape, centered cover slide, every heading = new slide. For presentations — weekly syncs, pitches, board updates, demos.
+
+**`--layout longread`:** one tall page, no breaks, portrait width (210mm), smaller type for reading density. The `<div align="center">` intro block from the markdown source becomes the doc header (inline, not a slide). For reading-style docs — guides, memos, reference material. Produces a 1-page PDF where the reader scrolls top-to-bottom like a web page.
+
+### Choosing a break level (deck only)
 
 **`--break h2` (default):** every `##` heading = new slide. Good for sync-style decks where each sub-topic is a self-contained slide with rich content (table, diagram, 5+ bullets). Bad when source has many thin `##` sub-sections under a `#` chapter — produces mostly-empty slides.
 
 **`--break h1`:** every `#` heading = new slide; `##` becomes an in-slide section separator (like a bold sub-header). Good for documentation/guides structured as chapters, where one chapter = one dense slide with multiple sub-sections, tables, and bullets.
 
-Rule of thumb: if your thinnest `##` section is < 3 lines of content, use `--break h1` and consolidate.
-
-## Variants
-
-- **Landscape preza** (default): A4 landscape, big fonts, one-slide-per-H2 — for syncs, pitches, demos
-- **Portrait doc** (future): A4 portrait, smaller fonts, no forced page breaks — for long reference docs like glossaries. Currently same CSS works OK for portrait too with minor tweaks.
+Rule of thumb: if your thinnest `##` section is < 3 lines of content, use `--break h1` and consolidate. Or switch to `--layout longread` entirely — if the doc reads top-to-bottom anyway, pagination is fighting the content.
 
 ## Known rough edges
 
