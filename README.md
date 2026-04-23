@@ -14,6 +14,13 @@ Personal Codex skill pack for product case solving, market analysis, McKinsey-st
 - `ru-text` - Russian text style, typography, UX and business writing
 - `md-to-pdf-deck` - markdown → presentation-style PDF (A4 landscape, dark GitHub theme, one-slide-per-H2, mermaid, emoji, dialog blockquotes)
 - `itmo-report` - ITMO reports and presentations in LaTeX/PPTX style
+- `notebooklm` - Google NotebookLM workflows: notebooks, sources, artifacts, podcast/FAQ automation
+- `research` - base research workflow and outline generation
+- `research-deep` - deeper per-item research pass on an existing outline
+- `research-report` - assembles a final report from research artifacts
+- `research-add-fields` - extends research field schema
+- `research-add-items` - adds new entities/items to an ongoing research project
+- `tg-research` - Telegram research pipeline with MCP collection, deep research, and reporting
 
 ## Install
 
@@ -25,4 +32,6 @@ cp -R skills/product-case-deckmaker ~/.codex/skills/
 
 ## Notes
 
-This repository contains skill instructions and supporting assets only. It should not contain local credentials, tokens, or generated private working files.
+This repository contains skill instructions and supporting assets only. It should not contain local credentials, tokens, cookies, storage state, or generated private working files.
+
+Some skills may describe how to authenticate external tools (for example Google OAuth for NotebookLM), but no live credentials are stored in this repository.
