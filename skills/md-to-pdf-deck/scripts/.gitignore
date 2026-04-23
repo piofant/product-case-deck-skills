@@ -1,0 +1,6 @@
+# build artifacts
+out.html
+processed.md
+m_*.mmd
+m_*.svg
+*.pdf

@@ -12,6 +12,7 @@ Personal Codex skill pack for product case solving, market analysis, McKinsey-st
 - `scientific-slides` - research talks, thesis defense slides, timing and visual validation
 - `humanizer-ru` - Russian anti-AI / humanization editor
 - `ru-text` - Russian text style, typography, UX and business writing
+- `md-to-pdf-deck` - markdown → presentation-style PDF (A4 landscape, dark GitHub theme, one-slide-per-H2, mermaid, emoji, dialog blockquotes)
 
 ## Install
 
