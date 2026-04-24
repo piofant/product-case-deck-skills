@@ -3,27 +3,49 @@ name: md-to-pdf-deck
 description: Convert a markdown file into a polished PDF — either a presentation deck (A4 landscape, slide-per-heading, cover) or a single-page longread (continuous scroll, no pagination). Both share a dark GitHub theme, real dialog blockquotes, and rendered mermaid diagrams. Use deck mode for weekly syncs, board updates, product case studies. Use longread mode for reading-style docs (guides, memos, reference material) where the reader scrolls top-to-bottom like a web page.
 ---
 
-# Markdown → Presentation PDF
+# Markdown → Polished PDF
 
-Pipeline: **Markdown → (pre-rendered mermaid SVG + GitHub alerts + cover block) → pandoc HTML → WeasyPrint PDF**.
+Pipeline: **Markdown → (pre-rendered mermaid SVG + GitHub alerts + cover/longread pre-processing) → pandoc HTML → WeasyPrint PDF**.
 
-Produces A4 landscape PDF with:
-- Centered cover slide (title / subtitle / tagline / author)
-- One slide per `## H2` (via `page-break-before: always`)
+Two output modes share the same dark GitHub theme and formatting primitives:
+
+| Mode | Shape | Use for |
+|---|---|---|
+| `--layout longread` | **Single continuous tall page**, no pagination, auto-fit height, portrait width 210mm | Product guides, intros, memos, reference docs — anything read top-to-bottom |
+| `--layout deck` (default) | A4 landscape, slide-per-heading, centered cover | Weekly syncs, pitches, board updates, case studies |
+
+Shared features (both modes):
 - Dark GitHub palette (`#0d1117` background, `#58a6ff` headings)
-- Colored emoji via Noto Color Emoji
-- Dialog blockquotes with blue left-border + golden italics for quoted speech
+- Colored emoji via Noto Color Emoji (without keycap-digit hijacking)
+- Dialog blockquotes: blue left-border + golden italics for quoted speech
 - GitHub alerts (`> [!NOTE]`, `> [!WARNING]`, etc.) as colored callouts
 - Mermaid diagrams pre-rendered to SVG with node labels intact
 - Tables with striped rows, code blocks with JetBrains Mono
 
+## Quick recipe — longread intro doc (the Lumen guide style)
+
+For a shareable intro doc (what we produced as `LUMEN_FUNCTIONAL_GUIDE.pdf`):
+
+```bash
+cd /path/to/skill/scripts
+python3 build.py /path/to/your-doc.md /path/to/output.pdf \
+  "Title"                          \
+  "Subtitle · audience · tagline" \
+  "Author · Date"                  \
+  --layout longread
+```
+
+Source markdown should open with a `<div align="center">` block containing `# Title` and `### Subtitle` — in longread mode it renders inline as the document header (not a slide cover). The rest of the doc flows naturally with `#`/`##` headings, tables, blockquotes.
+
+The skill auto-fits the page height via two-pass rendering: the first pass measures actual content extent using WeasyPrint's box-tree API, the second re-renders with `210mm × Nmm` where N matches content + 22mm bottom margin. No wasted empty space at the bottom.
+
 ## When to use
 
-- User asks to "export as PDF" a markdown weekly sync, update, deck, case study, or glossary
-- User says "make it look like a preza" or "нормальный PDF"
+- User asks to "export as PDF" a markdown weekly sync, update, deck, case study, guide, or intro doc
+- User says "make it look like a preza" / "нормальный PDF" / "такой же длинный как в прошлый раз"
 - User wants to share a GitHub markdown document externally where readers may not know GitHub
 
-**Do NOT use for:** short notes, single-page readmes, or documents that have no section structure (no `##` headings). For those, GitHub's native markdown view is better.
+**Do NOT use for:** short notes, single-page readmes, or documents that have no section structure. For those, GitHub's native markdown view is better.
 
 ## When NOT to use
 
@@ -42,25 +64,33 @@ Produces A4 landscape PDF with:
 | **Pandoc default body CSS overridden** | Pandoc adds `body { max-width: 36em }` which squashes content into a narrow column. Must override with `!important`. |
 | **Cover slide built from script, not markdown** | The first `# H1 + ### H3` block gets wrapped in `<div class="cover">` with subtitle/tagline/author classes. Lets us keep the markdown source clean. |
 
-## Quick start
+## Quick start — deck mode
+
+For a presentation-style PDF (A4 landscape, slide-per-H2):
 
 ```bash
 cd /path/to/skill/scripts
-cp /path/to/your-doc.md source.md
-
-python3 build.py source.md output.pdf "Title" "Subtitle or tagline" "Author · Date"
-```
-
-Example:
-
-```bash
-python3 build.py deck.md weekly-sync.pdf \
+python3 build.py /path/to/deck.md /path/to/weekly-sync.pdf \
   "Lumen Weekly Sync" \
   "Что неделя значит для продукта" \
   "Вова · 2026-04-23"
 ```
 
-Outputs `weekly-sync.pdf` (A4 landscape, dark theme, one slide per H2).
+Default mode. Outputs A4 landscape, dark theme, one slide per `## H2`.
+
+## Quick start — longread mode
+
+For a guide / memo / intro doc (single tall page, auto-fit height):
+
+```bash
+python3 build.py /path/to/guide.md /path/to/guide.pdf \
+  "Люмен" \
+  "Telegram-бот, который ведёт себя как друг" \
+  "Вова · 2026-04-23" \
+  --layout longread
+```
+
+Outputs a single-page PDF (portrait width 210mm, height auto-matched to content + bottom margin). Reader scrolls top-to-bottom like a web page.
 
 ## Install dependencies
 
@@ -143,7 +173,18 @@ The subtitle under the title is auto-extracted from the first `### ` heading in 
 
 **`--layout deck` (default):** A4 landscape, centered cover slide, every heading = new slide. For presentations — weekly syncs, pitches, board updates, demos.
 
-**`--layout longread`:** one tall page, no breaks, portrait width (210mm), smaller type for reading density. The `<div align="center">` intro block from the markdown source becomes the doc header (inline, not a slide). For reading-style docs — guides, memos, reference material. Produces a 1-page PDF where the reader scrolls top-to-bottom like a web page.
+**`--layout longread`:** one tall page, no breaks, portrait width (210mm), smaller reading-density type. The `<div align="center">` intro block from the markdown source becomes the doc header (inline, not a slide). For reading-style docs — guides, memos, intros, reference material.
+
+#### How longread auto-fit works (two-pass render)
+
+Naive `@page { size: 210mm 5000mm }` leaves a lot of empty dark background below the content when the doc is shorter. The skill fixes this via two-pass rendering:
+
+1. First pass: render into the Python API with 5000mm sentinel height
+2. Walk the box tree (skipping `PageBox` and `MarginBox`), find the deepest bottom Y of actual content
+3. Convert CSS px → mm, add 22mm bottom margin
+4. Rewrite `override.css` with the fitted height and re-render
+
+Result: the final PDF is exactly as tall as it needs to be — no wasted space, and the reader can scroll without hitting a long empty tail.
 
 ### Choosing a break level (deck only)
 
@@ -162,10 +203,15 @@ Rule of thumb: if your thinnest `##` section is < 3 lines of content, use `--bre
 
 ## Files in this skill
 
-- `scripts/build.py` — the pipeline
-- `scripts/preza.css` — dark landscape theme
+- `scripts/build.py` — the pipeline (single-pass for deck, two-pass auto-fit for longread)
+- `scripts/preza.css` — dark base theme (both modes)
+- `scripts/override.css` — generated per run; empty in deck/h2, h1-break rules in deck/h1, longread-mode overrides in longread (portrait + fitted page height)
+- `scripts/head.html` — pandoc `<head>` injection linking preza.css + override.css
 - `scripts/mermaid-config.json` — mermaid dark theme (with `htmlLabels: false`!)
 - `scripts/puppeteer-config.json` — `--no-sandbox` for root
-- `scripts/head.html` — pandoc `<head>` injection for CSS linking
 - `references/example-weekly-sync.md` — minimal working example
 - `assets/preview-cover.png` — sample output
+
+## Reference output
+
+`LUMEN_FUNCTIONAL_GUIDE.pdf` in [vedulix/nanobot-workspace](https://github.com/vedulix/nanobot-workspace/blob/main/workspace/LUMEN_FUNCTIONAL_GUIDE.pdf) was produced with the longread recipe above. Good reference for tone/length/density when building similar intro docs.
